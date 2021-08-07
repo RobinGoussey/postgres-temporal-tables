@@ -23,22 +23,18 @@ CREATE TABLE firemen (
 	"rank" text
 );
 -- fill table
-INSERT INTO update_to_history_firemen_temporal (name,"rank") VALUES ('Bram','Sgt.');
+INSERT INTO firemen (name,"rank") VALUES ('Bram','Sgt.');
 -- Conver to temporal.
-select public.convert_to_temporal('update_to_history_firemen_temporal');
+select public.convert_to_temporal('firemen');
 
 -- test functionality of history
-UPDATE update_to_history_firemen_temporal 
+UPDATE firemen 
 SET "rank" = 'Cpt.'
 WHERE "rank" = 'Sgt.';
 
--- We can't use the timestamp columns, as they are constantly changing
-select id , name , rank from temporal_update_to_history_firemen_temporal_history;
+SELECT * from firemen;
 
-select id , name , rank from temporal_update_to_history_firemen_temporal_history where sysendtime is null;
-
--- Should be 2, since the start time should have been updated
-select count(DISTINCT sysStartTime) from temporal_update_to_history_firemen_temporal_history;
+SELECT firemen_as_of(<some_timestamp>);
 ```
 
 
