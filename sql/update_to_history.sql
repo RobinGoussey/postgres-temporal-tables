@@ -19,3 +19,6 @@ WHERE "rank" = 'Sgt.';
 select id , name , rank from temporal_update_to_history_firemen_temporal_history;
 
 select id , name , rank from temporal_update_to_history_firemen_temporal_history where sysendtime is null;
+
+-- Should be 2, since the start time should have been updated
+select count(DISTINCT sysStartTime) from temporal_update_to_history_firemen_temporal_history;

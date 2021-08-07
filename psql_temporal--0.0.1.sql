@@ -82,6 +82,8 @@ LANGUAGE plpgsql VOLATILE
         SET SysStartTime = update_time
         WHERE NEW.id=history.id and SysEndTime IS NULL;
 
+        NEW.SysStartTime := update_time;
+
         -- if delete, dont insert new record in history.
         IF (TG_OP <> ''DELETE'') THEN
           INSERT INTO temporal_%1$s_history VALUES (NEW.*);
@@ -94,6 +96,21 @@ LANGUAGE plpgsql VOLATILE
       UPDATE OR INSERT OR DELETE ON %1$s
       FOR EACH ROW EXECUTE PROCEDURE %1$s_INSERT_INTO_HISTORY();
 
+    ',table_name);
+    -- as of functions.
+    EXECUTE format('
+      CREATE OR REPLACE FUNCTION %1$s_AS_OF(_time timestamptz) 
+      RETURNS SETOF temporal_%1$s_history
+      LANGUAGE PLPGSQL 
+      AS 
+      $%1$s_AS_OF$
+      BEGIN
+        return query
+          select * 
+          from temporal_%1$s_history
+          where (SysEndTime >= _time or SysEndTime IS NULL) and SysStartTime <= _time;
+      END;
+      $%1$s_AS_OF$
     ',table_name);
     -- EXECUTE format('
     -- CREATE TRIGGER %I_update
