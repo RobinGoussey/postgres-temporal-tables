@@ -1,6 +1,6 @@
 EXTENSION = psql_temporal
 DATA = psql_temporal--0.0.1.sql
-REGRESS = psql_temporal_test     # our test script file (without extension)
+REGRESS = table_creation update_to_history insert_to_history     # our test script file (without extension)
 
 # Postgres build stuff
 # postgres build stuff

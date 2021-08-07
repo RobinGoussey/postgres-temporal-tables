@@ -58,7 +58,7 @@ LANGUAGE plpgsql VOLATILE
 
     -- create the table, neat thing is primary key is dropped
 	  EXECUTE format('
-      CREATE TABLE IF NOT EXISTS %I_history as TABLE %I ;', table_name,table_name);
+      CREATE TABLE IF NOT EXISTS temporal_%I_history as TABLE %I ;', table_name,table_name);
     -- create tiggers to update table system temporal tables
 
     EXECUTE format('
@@ -73,27 +73,29 @@ LANGUAGE plpgsql VOLATILE
         update_time timestamptz = now();
       BEGIN
         -- update old record
-        UPDATE %1$s_history history
+        UPDATE temporal_%1$s_history history
         SET SysEndTime = update_time
         WHERE OLD.id=history.id and SysEndTime IS NULL;
 
         -- update starttime of new
-        UPDATE %1$s_history history
+        UPDATE temporal_%1$s_history history
         SET SysStartTime = update_time
         WHERE NEW.id=history.id and SysEndTime IS NULL;
 
         -- if delete, dont insert new record in history.
         IF (TG_OP <> ''DELETE'') THEN
-          INSERT INTO %1$s_history VALUES (NEW.*);
+          INSERT INTO temporal_%1$s_history VALUES (NEW.*);
         END IF;
         RETURN NEW;
       END;
       $%1$s_INSERT_INTO_HISTORY$;
 
-
-
-      CREATE TRIGGER %1$s_TEMPORAL_TRIGGER AFTER
+      CREATE TRIGGER %1$s_UPDATE_TEMPORAL_TRIGGER AFTER
       UPDATE ON %1$s
+      FOR EACH ROW EXECUTE PROCEDURE %1$s_INSERT_INTO_HISTORY();
+
+      CREATE TRIGGER %1$s_INSERT_TEMPORAL_TRIGGER AFTER
+      INSERT ON %1$s
       FOR EACH ROW EXECUTE PROCEDURE %1$s_INSERT_INTO_HISTORY();
 
     ',table_name);
