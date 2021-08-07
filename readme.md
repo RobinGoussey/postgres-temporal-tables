@@ -15,3 +15,7 @@ Possibly needed:
 ```bash
 sudo apt-get install postgresql-server-dev-12
 ```
+
+possible extensions: 
+-- allow renaming of application fields
+-- allow limiting temporal update on certain fields (eg. only on rank or name, and not on the post field).
