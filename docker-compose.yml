@@ -1,0 +1,30 @@
+version: "3.5"
+services:
+  postgres:
+    image: custom_pg
+    build: .
+    expose:
+      - 5432
+    ports:
+      - 55432:5432
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+    volumes:
+      - .:/usr/share/postgresql/12/extension/psql_temporal
+    networks:
+      - psql_temporal
+  pgadmin:
+    image: dpage/pgadmin4:5.4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_PORT: 5050
+    ports:
+      - "5050:5050"
+    networks:
+      - psql_temporal
+networks:
+  psql_temporal:
+    external: false

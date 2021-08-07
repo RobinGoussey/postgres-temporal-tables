@@ -1,0 +1,4 @@
+# Tryout for temporal databases.
+comment = 'Extension on postgres to add temporal tables.'
+default_version = '0.0.1'
+relocatable = true
