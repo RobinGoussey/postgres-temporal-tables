@@ -14,6 +14,8 @@ possible Additions:
 
 ## Example
 
+See the expected folder for more examples with results.
+
 ```SQL
 CREATE EXTENSION IF NOT EXISTS psql_temporal;
 
