@@ -2,7 +2,7 @@
 This is an inital try to a poor man's temporal table. 
 
 It will add triggers that when updating a temporal table, will fill it into the history.
-So let's say you have a table employee, then it will create an underlying temporal_employee_history table, and an function employee_as_of(timestamptz).
+So let's say you have a table employee, then it will create an underlying temporal_employee_history table, and an function employee_as_of(timestamptz). Currently every update will trigger a history row.
 
 Currently it only supports System time temporality. But I'm planning on adding the Application temporality, as far as a database can do that.
 
@@ -24,7 +24,7 @@ CREATE TABLE firemen (
 );
 -- fill table
 INSERT INTO firemen (name,"rank") VALUES ('Bram','Sgt.');
--- Conver to temporal.
+-- Convert to temporal.
 select public.convert_to_temporal('firemen');
 
 -- test functionality of history
