@@ -1,0 +1,23 @@
+CREATE EXTENSION IF NOT EXISTS psql_temporal;
+NOTICE:  extension "psql_temporal" already exists, skipping
+--should return empty string
+select _temporal_get_update_of_columns('{}');
+ _temporal_get_update_of_columns 
+---------------------------------
+ 
+(1 row)
+
+--should return OF test, name
+select _temporal_get_update_of_columns('{test,name}');
+ _temporal_get_update_of_columns 
+---------------------------------
+ OF test,name
+(1 row)
+
+--should return OF name
+select _temporal_get_update_of_columns('{name}');
+ _temporal_get_update_of_columns 
+---------------------------------
+ OF name
+(1 row)
+

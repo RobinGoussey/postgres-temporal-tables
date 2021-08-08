@@ -1,40 +1,79 @@
 CREATE EXTENSION IF NOT EXISTS psql_temporal;
 NOTICE:  extension "psql_temporal" already exists, skipping
-CREATE TABLE update_to_history_firemen_temporal (
+CREATE TABLE update_firemen_temporal (
 	id serial PRIMARY KEY,
 	name text,
 	"rank" text
 );
 -- fill table
-INSERT INTO update_to_history_firemen_temporal (name,"rank") VALUES ('Bram','Sgt.');
+INSERT INTO update_firemen_temporal (name,"rank") VALUES ('Bram','Sgt.');
 -- create tables
-select public.convert_to_temporal('update_to_history_firemen_temporal');
-NOTICE:  trigger "update_to_history_firemen_temporal_temporal_trigger" for relation "public.update_to_history_firemen_temporal" does not exist, skipping
+select public.convert_to_temporal('update_firemen_temporal');
+NOTICE:  trigger "update_firemen_temporal_temporal_trigger" for relation "public.update_firemen_temporal" does not exist, skipping
  convert_to_temporal 
 ---------------------
  t
 (1 row)
 
 -- test functionality of history
-UPDATE update_to_history_firemen_temporal 
+UPDATE update_firemen_temporal 
 SET "rank" = 'Cpt.'
 WHERE "rank" = 'Sgt.';
 -- We can't use the timestamp columns, as they are constantly changing
-select id , name , rank from temporal_update_to_history_firemen_temporal_history;
+select id , name , rank from temporal_update_firemen_temporal_history;
  id | name | rank 
 ----+------+------
   1 | Bram | Sgt.
   1 | Bram | Cpt.
 (2 rows)
 
-select id , name , rank from temporal_update_to_history_firemen_temporal_history where sysendtime is null;
+select id , name , rank from temporal_update_firemen_temporal_history where sysendtime is null;
  id | name | rank 
 ----+------+------
   1 | Bram | Cpt.
 (1 row)
 
 -- Should be 2, since the start time should have been updated
-select count(DISTINCT sysStartTime) from temporal_update_to_history_firemen_temporal_history;
+select count(DISTINCT sysStartTime) from temporal_update_firemen_temporal_history;
+ count 
+-------
+     2
+(1 row)
+
+CREATE TABLE update_firemen_partial_temporal (
+	id serial PRIMARY KEY,
+	name text,
+	"rank" text
+);
+INSERT INTO update_firemen_partial_temporal (name,"rank") VALUES ('Bram','Sgt.');
+select public.convert_to_temporal('update_firemen_partial_temporal',update_columns=>'{rank}');
+NOTICE:  trigger "update_firemen_partial_temporal_temporal_trigger" for relation "public.update_firemen_partial_temporal" does not exist, skipping
+ convert_to_temporal 
+---------------------
+ t
+(1 row)
+
+-- should be 1
+select count(*) from temporal_update_firemen_partial_temporal_history;
+ count 
+-------
+     1
+(1 row)
+
+UPDATE update_firemen_partial_temporal 
+SET "name" = 'Bert';
+-- should still be 1, since name should be ignored
+select count(*) from temporal_update_firemen_partial_temporal_history;
+ count 
+-------
+     1
+(1 row)
+
+UPDATE update_firemen_partial_temporal 
+SET "rank" = 'Cpt.'
+WHERE "rank" = 'Sgt.';
+-- should be 2
+select count(*) from temporal_update_firemen_partial_temporal_history;
  count 
 -------
      2

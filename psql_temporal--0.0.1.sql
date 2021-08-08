@@ -8,32 +8,23 @@
 -- Create history table
 -- Create view to get current status
 
+-- Function to create string to append to update trigger. If update_columns is empty, do all, otherwise, only do the columns in the array.
+CREATE OR REPLACE FUNCTION public._temporal_get_update_of_columns(update_columns text[])
+RETURNS text
+LANGUAGE plpgsql VOLATILE
+  AS $get_update_of_columns$
+  BEGIN
+    -- everything
+    if(array_length(update_columns,1) > 0 ) then
+      return 'OF ' || array_to_string(update_columns, ',');
+     else
+      return '';
+    end if;
 
--- CREATE OR REPLACE FUNCTION create_history_trigger(table_name regclass)
--- LANGUAGE plpgsql IMMUTABLE STRICT
---   AS $$
--- execute FORMAT('
--- CREATE OR REPLACE FUNCTION %I_insert_into_history() 
---    RETURNS TRIGGER 
---    LANGUAGE PLPGSQL
--- AS $$
--- DECLARE 
---   timestamptz update_time = now();
--- END;
-
--- BEGIN
---    -- trigger logic
---   UPDATE %I_history history
---   SET SysEndTime = update_time
---   WHERE OLD.id=history.id and SysEndTime IS NULL;
+  END;
+  $get_update_of_columns$;
   
---   INSERT INTO %I_history VALUES NEW;
--- END;
--- $$',table_name,table_name,table_name)
---     END;
---   $$;
-
-CREATE OR REPLACE FUNCTION public.convert_to_temporal(table_name regclass)
+CREATE OR REPLACE FUNCTION public.convert_to_temporal(table_name regclass,update_columns text[] DEFAULT '{}')
 RETURNS boolean
 LANGUAGE plpgsql VOLATILE
   AS $$
@@ -93,8 +84,15 @@ LANGUAGE plpgsql VOLATILE
       $%1$s_INSERT_INTO_HISTORY$;
 
       CREATE TRIGGER %1$s_UPDATE_TEMPORAL_TRIGGER AFTER
-      UPDATE OR INSERT OR DELETE ON %1$s
-      FOR EACH ROW EXECUTE PROCEDURE %1$s_INSERT_INTO_HISTORY();
+      UPDATE ' || _temporal_get_update_of_columns(update_columns) || ' ON %1$s
+      FOR EACH ROW
+      WHEN (OLD.* IS DISTINCT FROM NEW.*)
+      EXECUTE PROCEDURE %1$s_INSERT_INTO_HISTORY();
+
+      CREATE TRIGGER %1$s_INSERT_DELETE_TEMPORAL_TRIGGER AFTER
+      INSERT OR DELETE ON %1$s
+      FOR EACH ROW
+      EXECUTE PROCEDURE %1$s_INSERT_INTO_HISTORY();
 
     ',table_name);
     -- as of functions.
@@ -112,74 +110,6 @@ LANGUAGE plpgsql VOLATILE
       END;
       $%1$s_AS_OF$
     ',table_name);
-    -- EXECUTE format('
-    -- CREATE TRIGGER %I_update
-    -- AFTER UPDATE ON %I
-    -- FOR ROW
-    --   EXECUTE PROCEDURE trigger_function;
-    --   ',table_name);   
-
-
-    -- EXECUTE format('
-    -- CREATE TRIGGER %I_update
-    -- AFTER UPDATE ON %I
-    -- FOR EACH ROW
-    -- UPDATE %I SET 
-    -- EXECUTE PROCEDURE log_account_update();
-    --   ',table_name);
-
-
-
     RETURN(true);
     END;
   $$;
-
-
-
--- CREATE FUNCTION create_temporal_table(table_name text)
--- RETURNS boolean
--- LANGUAGE plpgsql IMMUTABLE STRICT
---   AS $$
---     DECLARE
---       chars char[];
---       ret varchar;
---       val int;
---     BEGIN
--- 	  -- create the table
--- 	  EXECUTE format('
---       CREATE TABLE IF NOT EXISTS %I as TABLE _tbl 
--- 	  WITH NO DATA;', 't_' || table_name);
-
---     RETURN(ret);
---     END;
---   $$;
-
-
--- working, todo replace %I
-
--- DROP TRIGGER IF EXISTS FIREMEN_UPDATE on public.firemen_temporal;
-
--- CREATE OR REPLACE FUNCTION firemen_temporal_insert_into_history() 
---    RETURNS TRIGGER 
---    LANGUAGE PLPGSQL
--- AS $$
--- DECLARE 
---   update_time timestamptz = now();
--- BEGIN
---    -- trigger logic
---   UPDATE firemen_temporal_history history
---   SET SysEndTime = update_time
---   WHERE OLD.id=history.id and SysEndTime IS NULL;
-  
---   INSERT INTO firemen_temporal_history VALUES (NEW.*);
---   RETURN NEW;
--- END;
--- $$;
-
--- CREATE TRIGGER FIREMEN_UPDATE
---     AFTER UPDATE ON firemen_temporal
---     FOR ROW
---       EXECUTE PROCEDURE firemen_temporal_insert_into_history();
-	  
--- UPDATE firemen_temporal
--- SET name = 'Bert';
